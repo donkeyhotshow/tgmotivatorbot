@@ -2,11 +2,11 @@ name: Telegram Quotes
 
 on:
   schedule:
-    - cron: "20 7 * * *"
-    - cron: "45 7 * * *"
-    - cron: "45 11 * * *"
-    - cron: "30 15 * * *"
-    - cron: "0 17 * * *"
+    - cron: "20 6 * * *"
+    - cron: "45 6 * * *"
+    - cron: "45 10 * * *"
+    - cron: "30 14 * * *"
+    - cron: "0 16 * * *"
   workflow_dispatch:
 
 jobs:
