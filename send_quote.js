@@ -21,9 +21,9 @@ async function run() {
     process.exit(0);
   }
 
-  const weekday = new Date().toLocaleString("en-US", { weekday: "long", timeZone: "UTC" }).toLowerCase();
-  const quotesFile = path.join(QUOTES_DIR, `${weekday}.json`);
-  if (!fs.existsSync(quotesFile)) throw new Error(`Quotes file for ${weekday} not found`);
+  // Используем единый файл цитат
+  const quotesFile = path.join(QUOTES_DIR, "quotes.json");
+  if (!fs.existsSync(quotesFile)) throw new Error("quotes.json not found");
 
   const quotes = JSON.parse(fs.readFileSync(quotesFile));
   if (!quotes.length) throw new Error("Quotes file is empty");
@@ -34,12 +34,15 @@ async function run() {
   console.log(`🚀 Начинаем рассылку для ${subscribers.length} пользователей...`);
 
   for (const chatId of subscribers) {
-    const histFile = path.join(HISTORY_DIR, `${chatId}_${weekday}.json`);
+    // Храним историю для каждого пользователя в едином файле
+    const histFile = path.join(HISTORY_DIR, `${chatId}.json`);
     let used = [];
     if (fs.existsSync(histFile)) used = JSON.parse(fs.readFileSync(histFile));
     
     let available = quotes.filter(q => !used.includes(q));
+    // Если все цитаты использованы, сбрасываем историю
     if (!available.length) {
+      console.log(`🔄 Сброс истории для пользователя ${chatId} (все цитаты показаны)`);
       used = [];
       available = [...quotes];
     }
