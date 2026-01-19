@@ -1,0 +1,55 @@
+name: Send Daily Quotes
+
+on:
+  schedule:
+    # Утро (8:00-10:00 UTC+2 = 6:00-8:00 UTC) - запуск в 6:30 UTC
+    - cron: "30 6 * * 1-5"
+    # Обед (13:30 UTC+2 = 11:30 UTC)
+    - cron: "30 11 * * 1-5"
+    # Вечер (19:00 UTC+2 = 17:00 UTC)
+    - cron: "0 17 * * 1-5"
+  workflow_dispatch: # Возможность запустить вручную
+
+jobs:
+  send-quote:
+    runs-on: ubuntu-latest
+
+    # Предотвращение параллельных запусков
+    concurrency:
+      group: quote-sender
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Send Quote to All Subscribers
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: node send-quote.js
+
+      - name: Commit Updated State
+        run: |
+          git config --local user.email "wolf-bot@github.com"
+          git config --local user.name "Wolf Motivator Bot"
+          git add data/state.json data/subscribers.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "📝 Update state and subscribers [skip ci]"
+          git push
+        continue-on-error: true
+
+      - name: Report Status
+        if: failure()
+        run: |
+          echo "❌ Quote broadcast failed!"
+          exit 1

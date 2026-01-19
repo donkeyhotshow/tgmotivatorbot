@@ -1,0 +1,16 @@
+{
+  "name": "telegram-quotes-bot",
+  "version": "1.0.0",
+  "description": "Telegram Quotes Bot with GitHub Actions automation",
+  "main": "bot.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node bot.js",
+    "send": "node send_quote.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "telegraf": "^4.15.3"
+  }
+}

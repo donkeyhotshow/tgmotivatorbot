@@ -1,0 +1,23 @@
+node_modules/
+.env
+*.log
+generate_data.js
+gen.js
+generate_quotes.js
+generate_data.js
+gen.js
+# Игнорируем старые папки, если они остались
+data/
+src/
+public/
+tests/
+railway.json
+index.js
+send-quote.js
+AUDIT_REPORT.md
+QUICKSTART.md
+# Мы НЕ игнорируем subscribers.json и history/, 
+# так как GitHub Actions должен коммитить их обратно в репозиторий.
+!subscribers.json
+!history/
+!quotes/
