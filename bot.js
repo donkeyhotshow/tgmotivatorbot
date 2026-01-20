@@ -13,8 +13,10 @@ const bot = new Telegraf(TOKEN);
 
 const SUB_FILE = path.join(__dirname, "subscribers.json");
 const QUOTES_DIR = path.join(__dirname, "quotes");
+const HISTORY_DIR = path.join(__dirname, "history");
 
 if (!fs.existsSync(SUB_FILE)) fs.writeFileSync(SUB_FILE, JSON.stringify([]));
+if (!fs.existsSync(HISTORY_DIR)) fs.mkdirSync(HISTORY_DIR);
 
 function saveSubscriber(chatId) {
   const subs = JSON.parse(fs.readFileSync(SUB_FILE));
@@ -26,6 +28,32 @@ function saveSubscriber(chatId) {
   return false;
 }
 
+function getQuoteForUser(chatId) {
+  const quotesPath = path.join(QUOTES_DIR, "quotes.json");
+  if (!fs.existsSync(quotesPath)) return null;
+
+  const quotes = JSON.parse(fs.readFileSync(quotesPath));
+  if (!quotes.length) return null;
+
+  const histFile = path.join(HISTORY_DIR, `${chatId}.json`);
+  let used = [];
+  if (fs.existsSync(histFile)) used = JSON.parse(fs.readFileSync(histFile));
+
+  let available = quotes.filter(q => !used.includes(q));
+  if (!available.length) {
+    used = [];
+    available = [...quotes];
+  }
+
+  const quote = available[Math.floor(Math.random() * available.length)];
+  
+  // Сохраняем в историю
+  used.push(quote);
+  fs.writeFileSync(histFile, JSON.stringify(used, null, 2));
+  
+  return quote;
+}
+
 bot.start((ctx) => {
   const chatId = ctx.chat.id;
   const isNew = saveSubscriber(chatId);
@@ -34,17 +62,26 @@ bot.start((ctx) => {
     : "Вы уже подписаны! Ждите следующую порцию мотивации. 🔥");
 });
 
+// Ответ цитатой на любое сообщение
+bot.on("message", (ctx) => {
+  // Игнорируем команды, так как они обрабатываются отдельно
+  if (ctx.message.text && ctx.message.text.startsWith("/")) return;
+
+  const quote = getQuoteForUser(ctx.chat.id);
+  if (quote) {
+    ctx.replyWithHTML(quote);
+  } else {
+    ctx.reply("Цитаты временно недоступны. 😔");
+  }
+});
+
 bot.command("test", (ctx) => {
-  const weekday = new Date().toLocaleString("en-US", { weekday: "long", timeZone: "UTC" }).toLowerCase();
-  const quotesPath = path.join(QUOTES_DIR, `${weekday}.json`);
-  
-  if (!fs.existsSync(quotesPath)) return ctx.reply("Цитаты пока не загружены.");
-  
-  const quotes = JSON.parse(fs.readFileSync(quotesPath));
-  if (!quotes.length) return ctx.reply("Цитаты пусты.");
-  
-  const quote = quotes[Math.floor(Math.random() * quotes.length)];
-  ctx.replyWithHTML(quote);
+  const quote = getQuoteForUser(ctx.chat.id);
+  if (quote) {
+    ctx.replyWithHTML(quote);
+  } else {
+    ctx.reply("Цитаты пока не загружены.");
+  }
 });
 
 bot.launch().then(() => {
